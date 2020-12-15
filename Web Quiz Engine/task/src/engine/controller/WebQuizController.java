@@ -1,21 +1,26 @@
 package engine.controller;
 
 import engine.model.*;
+import engine.repository.QuestionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @RestController
+@RequestMapping("/api/quizzes")
 public class WebQuizController {
-    List<Question> questionList;
+    @Autowired
+    QuestionRepository questionRepository;
+
     WebQuizController(){
-        questionList    =   new ArrayList<>();
+
     }
 
-    @PostMapping(value = "/api/quizzes", consumes = "application/json")
+    @PostMapping( consumes = "application/json")
     public Question addQuiz(@RequestBody Question question){
         if(
             question.getText()==null ||
@@ -29,32 +34,29 @@ public class WebQuizController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Missing Details");
         }
 
-        question.setId(questionList.size());
-        System.out.println("Inserted "+question);
-        questionList.add(question);
-
+        questionRepository.save(question);
         return question;
     }
 
-    @GetMapping(value ="/api/quizzes/{id}")
+    @GetMapping(value ="/{id}")
     public Question getQuiz(@PathVariable int id){
-        if(id >= questionList.size()){
-            throw  new ResponseStatusException(HttpStatus.NOT_FOUND);
+        Optional<Question> question = questionRepository.findById(id);
+        if(!question.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        return questionList.get(id);
+        return question.get();
     }
-    @GetMapping(value ="/api/quizzes")
+    @GetMapping()
     public List<Question> getAllQuizes(){
-        return questionList;
+        return questionRepository.findAll();
     }
-    @PostMapping(value = "/api/quizzes/{id}/solve", consumes = "application/json")
-    public Feedback solveQuiz(@PathVariable int id,@RequestBody Feedback feedback){
-        System.out.println(id+" "+feedback.getAnswer());
+    @PostMapping(value = "/{id}/solve", consumes = "application/json")
+    public Feedback solveQuiz(@PathVariable int id,@RequestBody Answer answer){
         try {
-            Question question = getQuiz(id);
-            return feedback.setFeedBack(
-                    question.getAnswer().size() == feedback.getAnswer().size() &&
-                    question.getAnswer().containsAll(feedback.getAnswer()));
+            Question question = questionRepository.findById(id).get();
+            System.out.println(question+" "+question.getAnswer()+" "+Arrays.toString(answer.getAnswer()));
+            return new Feedback(question.getAnswer().size() == List.of(answer.getAnswer()).size() &&
+                    question.getAnswer().containsAll(List.of(answer.getAnswer())));
         }catch(ResponseStatusException rse) {
             throw rse;
         }

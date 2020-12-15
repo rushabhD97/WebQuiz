@@ -659,6 +659,182 @@ files:
         }
     }
   learner_created: false
+- name: src/engine/model/Answer.java
+  visible: true
+  text: |
+    package engine.model;
+
+
+    import java.util.Arrays;
+    import java.util.Collection;
+    import java.util.Set;
+
+    public class Answer {
+        private Integer[] answer;
+        public Answer(Integer[] answer){
+            this.answer = answer;
+        }
+        public Answer(){}
+        public Integer[] getAnswer() {
+            return answer;
+        }
+    }
+  learner_created: true
+- name: src/engine/controller/WebQuizController.java
+  visible: true
+  text: |
+    package engine.controller;
+
+    import engine.model.*;
+    import engine.repository.QuestionRepository;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.http.HttpStatus;
+    import org.springframework.http.ResponseEntity;
+    import org.springframework.web.bind.annotation.*;
+    import org.springframework.web.server.ResponseStatusException;
+
+    import java.util.*;
+
+    @RestController
+    @RequestMapping("/api/quizzes")
+    public class WebQuizController {
+        @Autowired
+        QuestionRepository questionRepository;
+
+        WebQuizController(){
+
+        }
+
+        @PostMapping( consumes = "application/json")
+        public Question addQuiz(@RequestBody Question question){
+            if(
+                question.getText()==null ||
+                question.getText().isEmpty() ||
+                question.getTitle()==null||
+                question.getTitle().isEmpty()||
+                question.getOptions()==null ||
+                question.getOptions().size()<2
+            ){
+                System.out.println(question);
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Missing Details");
+            }
+
+            questionRepository.save(question);
+            return question;
+        }
+
+        @GetMapping(value ="/{id}")
+        public Question getQuiz(@PathVariable int id){
+            Optional<Question> question = questionRepository.findById(id);
+            if(!question.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+            return question.get();
+        }
+        @GetMapping()
+        public List<Question> getAllQuizes(){
+            return questionRepository.findAll();
+        }
+        @PostMapping(value = "/{id}/solve", consumes = "application/json")
+        public Feedback solveQuiz(@PathVariable int id,@RequestBody Answer answer){
+            try {
+                Question question = questionRepository.findById(id).get();
+                System.out.println(question+" "+question.getAnswer()+" "+Arrays.toString(answer.getAnswer()));
+                return new Feedback(question.getAnswer().size() == List.of(answer.getAnswer()).size() &&
+                        question.getAnswer().containsAll(List.of(answer.getAnswer())));
+            }catch(ResponseStatusException rse) {
+                throw rse;
+            }
+        }
+
+
+    }
+  learner_created: true
+- name: src/engine/model/Question.java
+  visible: true
+  text: "package engine.model;\n\nimport com.fasterxml.jackson.annotation.JsonProperty;\n\
+    \nimport javax.persistence.*;\nimport java.util.Arrays;\nimport java.util.List;\n\
+    \n@Entity\npublic class Question {\n    @Column\n    private String title;\n \
+    \   @Column\n    private String text;\n\n    @ElementCollection\n    private List<String>\
+    \ options;\n\n    @Id\n    @GeneratedValue(strategy = GenerationType.AUTO)\n \
+    \   @Column(name = \"question_id\")\n    private int id;\n\n\n    @JsonProperty(access\
+    \ = JsonProperty.Access.WRITE_ONLY)\n    @ElementCollection\n    private List<Integer>\
+    \ answer;\n\n\n    public Question() {\n\n    }\n    public Question(String title,\
+    \ String text, List<String> options, List<Integer> answer){\n        this.title\
+    \      = title;\n        this.text       = text;\n        this.options    = options;\n\
+    \        this.answer     = answer;\n    }\n\n    public int getId() {\n      \
+    \  return id;\n    }\n\n    public void setId(int id) {\n        this.id = id;\n\
+    \    }\n\n    public String getTitle() {\n        return title;\n    }\n\n   \
+    \ public void setTitle(String title) {\n        this.title = title;\n    }\n\n\
+    \    public String getText() {\n        return text;\n    }\n\n    public void\
+    \ setText(String text) {\n        this.text = text;\n    }\n\n    public List<String>\
+    \ getOptions() {\n        return options;\n    }\n\n    \n\n    public void setOptions(List<String>\
+    \ options) {\n        this.options = options;\n    }\n\n    public List<Integer>\
+    \ getAnswer() {\n        return answer;\n    }\n\n    public void setAnswer(List<Integer>\
+    \ answer) {\n        this.answer = answer;\n    }\n\n    @Override\n    public\
+    \ String toString() {\n        return \"Question{\" +\n                \"id=\"\
+    \ + id +\n                \", title='\" + title + '\\'' +\n                \"\
+    , text='\" + text + '\\'' +\n                \", options=\" + options +\n    \
+    \            \", answer=\" + answer +\n                '}';\n    }\n}\n"
+  learner_created: true
+- name: src/engine/repository/QuestionRepository.java
+  visible: true
+  text: |
+    package engine.repository;
+
+    import engine.model.Question;
+    import org.springframework.data.jpa.repository.JpaRepository;
+    import org.springframework.stereotype.Repository;
+
+    @Repository
+    public interface QuestionRepository extends JpaRepository<Question,Integer> {
+    }
+  learner_created: true
+- name: src/engine/model/Feedback.java
+  visible: true
+  text: |
+    package engine.model;
+
+    import com.fasterxml.jackson.annotation.JsonProperty;
+
+    import java.util.List;
+    public class Feedback {
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private boolean success;
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        private String feedback;
+        public Feedback setFeedBack(boolean success){
+            this.success = success;
+            this.feedback = success ?
+                    "Congratulations, you're right!\"":
+                    "Wrong answer! Please, try again.";
+            return this;
+        }
+        public Feedback(boolean success) {
+            setFeedBack(success);
+        }
+        public Feedback(){
+            this(false);
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        private void setSuccess(boolean success) {
+            this.success = success;
+        }
+
+        public String getFeedback() {
+            return feedback;
+        }
+
+        private void setFeedback(String feedback) {
+            this.feedback = feedback;
+        }
+
+    }
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/91/stages/508/implement#comment
 status: Unchecked
 record: -1

@@ -2,18 +2,33 @@ package engine.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.ArrayList;
+import javax.persistence.*;
+import java.util.Arrays;
 import java.util.List;
 
+@Entity
 public class Question {
-    private int id;
+    @Column
     private String title;
+    @Column
     private String text;
+
+    @ElementCollection
     private List<String> options;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "question_id")
+    private int id;
+
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @ElementCollection
     private List<Integer> answer;
+
+
     public Question() {
-        answer = new ArrayList<>();
+
     }
     public Question(String title, String text, List<String> options, List<Integer> answer){
         this.title      = title;
@@ -49,6 +64,8 @@ public class Question {
     public List<String> getOptions() {
         return options;
     }
+
+    
 
     public void setOptions(List<String> options) {
         this.options = options;
