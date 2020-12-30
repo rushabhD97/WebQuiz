@@ -2,9 +2,12 @@ package engine.controller;
 
 import engine.model.*;
 import engine.repository.QuestionRepository;
+import engine.service.QuestionService;
+import engine.service.QuestionServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -14,7 +17,7 @@ import java.util.*;
 @RequestMapping("/api/quizzes")
 public class WebQuizController {
     @Autowired
-    QuestionRepository questionRepository;
+    QuestionService questionService;
 
     WebQuizController(){
 
@@ -22,44 +25,32 @@ public class WebQuizController {
 
     @PostMapping( consumes = "application/json")
     public Question addQuiz(@RequestBody Question question){
-        if(
-            question.getText()==null ||
-            question.getText().isEmpty() ||
-            question.getTitle()==null||
-            question.getTitle().isEmpty()||
-            question.getOptions()==null ||
-            question.getOptions().size()<2
-        ){
-            System.out.println(question);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Missing Details");
-        }
-
-        questionRepository.save(question);
+        questionService.save(question, SecurityContextHolder.getContext().getAuthentication().getName());
         return question;
     }
 
     @GetMapping(value ="/{id}")
     public Question getQuiz(@PathVariable int id){
-        Optional<Question> question = questionRepository.findById(id);
-        if(!question.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        return question.get();
+        return questionService.findById(id);
     }
     @GetMapping()
     public List<Question> getAllQuizes(){
-        return questionRepository.findAll();
+        return questionService.findAll();
     }
     @PostMapping(value = "/{id}/solve", consumes = "application/json")
     public Feedback solveQuiz(@PathVariable int id,@RequestBody Answer answer){
-        try {
-            Question question = questionRepository.findById(id).get();
-            System.out.println(question+" "+question.getAnswer()+" "+Arrays.toString(answer.getAnswer()));
-            return new Feedback(question.getAnswer().size() == List.of(answer.getAnswer()).size() &&
+        Question question = questionService.findById(id);
+        if(question == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        System.out.println(question+" "+question.getAnswer()+" "+Arrays.toString(answer.getAnswer()));
+        return new Feedback(question.getAnswer().size() == List.of(answer.getAnswer()).size() &&
                     question.getAnswer().containsAll(List.of(answer.getAnswer())));
-        }catch(ResponseStatusException rse) {
-            throw rse;
-        }
+    }
+
+    @DeleteMapping(value = "{id}")
+    public void deleteQuiz(@PathVariable int id){
+        questionService.deleteById(id,
+                SecurityContextHolder.getContext().getAuthentication().getName());
     }
 
 

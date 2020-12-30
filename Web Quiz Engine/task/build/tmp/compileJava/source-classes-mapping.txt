@@ -1,12 +1,30 @@
 engine/model/Question.java
  engine.model.Question
+engine/config/SecurityConfig.java
+ engine.config.SecurityConfig
 engine/repository/QuestionRepository.java
  engine.repository.QuestionRepository
-engine/model/Feedback.java
- engine.model.Feedback
+engine/service/UserServiceImpl.java
+ engine.service.UserServiceImpl
+engine/repository/UserRepository.java
+ engine.repository.UserRepository
+engine/service/QuestionServiceImpl.java
+ engine.service.QuestionServiceImpl
 engine/WebQuizEngine.java
  engine.WebQuizEngine
-engine/controller/WebQuizController.java
- engine.controller.WebQuizController
+engine/controller/UserController.java
+ engine.controller.UserController
 engine/model/Answer.java
  engine.model.Answer
+engine/service/UserDetailsServiceImpl.java
+ engine.service.UserDetailsServiceImpl
+engine/model/User.java
+ engine.model.User
+engine/model/Feedback.java
+ engine.model.Feedback
+engine/service/QuestionService.java
+ engine.service.QuestionService
+engine/controller/WebQuizController.java
+ engine.controller.WebQuizController
+engine/service/UserService.java
+ engine.service.UserService
